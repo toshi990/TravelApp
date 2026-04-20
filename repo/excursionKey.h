@@ -40,15 +40,26 @@ public:
  * @brief Specialization of std::hash for ExcursionKey.
  * * Allows ExcursionKey to be used as a key in unordered containers like std::unordered_map.
  */
+/**
+ * @brief Hybrid Hash Function (Optimization for Analytics)
+ * * Applies different algorithms depending on the string type.
+ */
 template <>
 struct std::hash<ExcursionKey> {
-	/**
-	 * @brief Generates a hash value for an ExcursionKey.
-	 * @param k The key object to hash.
-	 * @return The calculated hash size_t value.
-	 */
 	size_t operator()(const ExcursionKey &k) const {
-		return std::hash<std::string>{}(k.getID());
+		const std::string& id = k.getID();
+
+		if (id.length() < 15) {
+			size_t hash = 2166136261u;
+			for (char c : id) {
+				hash ^= static_cast<size_t>(c);
+				hash *= 16777619u;
+			}
+			return hash;
+		}
+		else {
+			return std::hash<std::string>{}(id);
+		}
 	}
 };
 

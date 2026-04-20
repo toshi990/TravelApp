@@ -28,6 +28,7 @@ add_executable(app
         file/fileSystem.h
         interfaces/IFile.h
         interfaces/Iterator.h
+        benchmark.cpp
 )
 
 target_link_libraries(app

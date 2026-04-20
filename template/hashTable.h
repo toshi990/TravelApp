@@ -9,7 +9,7 @@
 #include <vector>
 #include <type_traits>
 
-template <typename K, typename V>
+template <typename K, typename V, typename Hash = std::hash<K>>
 class HashTable {
 private:
     struct VersionNode {
@@ -84,6 +84,30 @@ public:
     using const_reference = const value_type&;
     using pointer = value_type*;
     using const_pointer = const value_type*;
+
+    struct HashStats {
+        size_t totalElements;
+        size_t collisions;
+        size_t maxBucketSize;
+    };
+
+    HashStats getCollisionStats() const {
+        HashStats stats{tableSize, 0, 0};
+
+        for (size_t i = 0; i < cap; ++i) {
+            Node* curr = table[i];
+            if (curr != nullptr) {
+                size_t bucketLength = 0;
+                while (curr != nullptr) {
+                    bucketLength++;
+                    curr = curr->nextInBucket;
+                }
+                stats.collisions += (bucketLength - 1);
+                stats.maxBucketSize = std::max(stats.maxBucketSize, bucketLength);
+            }
+        }
+        return stats;
+    }
 
     class ConstIterator;
     class Iterator {
@@ -207,8 +231,8 @@ public:
     };
 
 private:
-    size_t getIndex(const K& key) const {
-        return std::hash<K>{}(key) % cap;
+    size_t getIndex(const K& key, size_t initCap, Node * const & node) const {
+        return Hash{}(key) % cap;
     }
 
     Node* findNode(const K& key) const {
@@ -262,7 +286,7 @@ private:
         }
 
         for (Node* node : nodes) {
-            size_t newIdx = std::hash<K>{}(node->kv.first) % newCap;
+            size_t newIdx = Hash{}(node->kv.first) % newCap;
 
             node->nextInBucket = newTable[newIdx];
             newTable[newIdx] = node;
